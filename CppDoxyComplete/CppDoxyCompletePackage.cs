@@ -71,7 +71,7 @@ namespace PopDragos.CppDoxyComplete
 				}
 				catch
 				{
-					return null;
+					assembly = null;
 				}
 				
 				return assembly;

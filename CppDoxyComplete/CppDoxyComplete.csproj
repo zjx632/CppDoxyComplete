@@ -42,7 +42,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EnvDte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -181,6 +183,9 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbbreviationMap.cs" />
+    <Compile Include="DoxygenConfig.cs" />
+    <Compile Include="DoxygenGenerator.cs" />
     <Compile Include="Guids.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -190,6 +195,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="CppDoxyCompletePackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StringHelper.cs" />
     <Compile Include="TripleSlashCompletionCommandHandler.cs" />
     <Compile Include="TripleSlashCompletionHandlerProvider.cs" />
     <Compile Include="TripleSlashCompletionSource.cs" />
