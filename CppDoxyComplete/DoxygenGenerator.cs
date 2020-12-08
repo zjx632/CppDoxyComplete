@@ -190,23 +190,43 @@ namespace CppTripleSlash
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // Write main comment from existing comments, if found.
-            if (parsedComment.BriefComments.Count > 0)
+            if (m_config.UseBriefTag)
             {
-                foreach (string line in parsedComment.BriefComments)
+                string tagLine = m_indentString + m_config.TagChar + "brief" + " ";
+                sb.Append("\r\n" + spaces + " *  " + tagLine);
+
+                if (parsedComment.BriefComments.Count > 0)
                 {
-                    sb.Append("\r\n" + spaces + " *  " + line);
+                    AppendComments(sb, parsedComment.BriefComments, spaces, tagLine.Length);
                 }
+                else
+                {
+                    if (m_config.SmartComments)
+                    {
+                        sb.Append(TryGenerateBriefDesc(codeElement));
+                    }
+                }             
             }
             else
             {
-                // Write placeholder for main comment.
-                sb.Append("\r\n" + spaces + " *  ");
-
-                // Try to determine initial main comment if comment auto-generation is enabled.
-                if (m_config.SmartComments)
+                // Write main comment from existing comments, if found.
+                if (parsedComment.BriefComments.Count > 0)
                 {
-                    sb.Append(TryGenerateBriefDesc(codeElement));
+                    foreach (string line in parsedComment.BriefComments)
+                    {
+                        sb.Append("\r\n" + spaces + " *  " + line);
+                    }
+                }
+                else
+                {
+                    // Write placeholder for main comment.
+                    sb.Append("\r\n" + spaces + " *  ");
+
+                    // Try to determine initial main comment if comment auto-generation is enabled.
+                    if (m_config.SmartComments)
+                    {
+                        sb.Append(TryGenerateBriefDesc(codeElement));
+                    }
                 }
             }
         }
@@ -485,6 +505,10 @@ namespace CppTripleSlash
                                     if (section.TagName == "return" || section.TagName == "returns")
                                     {
                                         parsedComment.Returns = section;
+                                    }
+                                    else if (section.TagName == "brief")
+                                    {
+                                        parsedComment.BriefComments.AddRange(section.Comments);
                                     }
                                     else
                                     {

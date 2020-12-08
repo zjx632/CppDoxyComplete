@@ -31,7 +31,7 @@ namespace CppTripleSlash
         /// <summary>
         /// Amount of indentation spaces for doxygen tags.
         /// </summary>
-        public int TagIndentation { get; set; } = 1;
+        public int TagIndentation { get; set; } = 0;
 
         /// <summary>
         /// Comment tag style.
@@ -85,6 +85,8 @@ namespace CppTripleSlash
                 }
             }
         }
+
+        public bool UseBriefTag { get; set; } = true;
 
         /// <summary>
         /// If true, auto-generation tries to generate smart comments for function summary, parameters and return values.
