@@ -175,7 +175,7 @@
 
                 // Check for /// or /*!.
                 string trimmed = (currentLine + typedChar).Trim();
-                return (trimmed == "///" || trimmed == m_config.FirstLineString);
+                return (trimmed == "///" || trimmed == "/*!" || trimmed == "/**" );
             }
 
             return false;
@@ -283,6 +283,7 @@
             int len = m_textView.Caret.Position.BufferPosition.Position - currentILine.Start.Position;
             string currentLine = m_textView.TextSnapshot.GetText(currentILine.Start.Position, len);
             string spaces = currentLine.Replace(currentLine.TrimStart(), "");
+            string next2char = m_textView.TextSnapshot.GetText(currentILine.Start.Position + len, 2);
 
             ThreadHelper.ThrowIfNotOnUIThread();
             TextSelection ts = m_dte.ActiveDocument.Selection as TextSelection;
@@ -291,15 +292,23 @@
             int oldLine = ts.ActivePoint.Line;
             int oldOffset = ts.ActivePoint.LineCharOffset;
 
+            // Removing the auto inserted "*/"
+            if (next2char == "*/")
+            {
+                ts.Delete(2);
+            }
+
             // Check if we're at the beginning of the document and should generate a file comment.
             if (oldLine == 1)
             {
                 string fileComment = m_generator.GenerateFileComment(m_dte, out int selectedLine);
                 ts.DeleteLeft(2); // Removing the // part here.
+
                 ts.Insert(fileComment);
 
                 // Move the caret.
                 ts.MoveToLineAndOffset(selectedLine + 1, 1);
+                
                 ts.EndOfLine();
                 return;
             }
