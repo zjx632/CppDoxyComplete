@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CppDoxyComplete", "CppDoxyComplete.csproj", "{EC07C9DB-4532-49AA-AC1B-1A81DEC1C6A9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CppDoxyComplete", "CppDoxyComplete\CppDoxyComplete.csproj", "{EC07C9DB-4532-49AA-AC1B-1A81DEC1C6A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {5EF4B4D1-6055-46DA-8367-7D66C505C373}
+		SolutionGuid = {9AFBE3C8-20B2-4E37-94CB-AA3CD772AF56}
 	EndGlobalSection
 EndGlobal
