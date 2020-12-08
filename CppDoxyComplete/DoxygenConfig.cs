@@ -24,11 +24,6 @@ namespace CppTripleSlash
     public class DoxygenConfig
     {
         /// <summary>
-        /// Event that is triggered when the config has changed.
-        /// </summary>
-        public event EventHandler ConfigChanged;
-
-        /// <summary>
         /// Amount of indentation spaces for doxygen tags.
         /// </summary>
         public int TagIndentation { get; set; } = 0;
@@ -86,6 +81,14 @@ namespace CppTripleSlash
             }
         }
 
+        /// <summary>
+        /// If true, use single line comment
+        /// </summary>
+        public bool UseSingleLineComment { get; set; } = true;
+
+        /// <summary>
+        /// If true, use brief tag
+        /// </summary>
         public bool UseBriefTag { get; set; } = true;
 
         /// <summary>

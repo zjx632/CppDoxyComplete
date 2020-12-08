@@ -275,6 +275,26 @@
         }
 
         /// <summary>
+        /// CodeElementFromPoint
+        /// </summary>
+        /// <param name="fcm">FileCodeModel</param>
+        /// <param name="point">VirtualPoint</param>
+        /// <param name="scopes">vsCMElement</param>
+        /// <returns></returns>
+        private CodeElement CodeElementFromPoint(FileCodeModel fcm, VirtualPoint point, params vsCMElement[] scopes)
+        {
+            foreach (var scope in scopes)
+            {
+                CodeElement codeElement = fcm.CodeElementFromPoint(point, scope);
+
+                if (codeElement != null)
+                    return codeElement;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Generates a Doxygen comment block to the current caret location.
         /// </summary>
         private void GenerateComment()
@@ -324,7 +344,13 @@
             {
                 while (codeElement == null)
                 {
-                    codeElement = fcm.CodeElementFromPoint(ts.ActivePoint, vsCMElement.vsCMElementFunction);
+                    codeElement = CodeElementFromPoint(fcm, ts.ActivePoint, 
+                        vsCMElement.vsCMElementFunction,
+                        vsCMElement.vsCMElementClass,
+                        vsCMElement.vsCMElementStruct,
+                        vsCMElement.vsCMElementEnum,
+                        vsCMElement.vsCMElementVariable,
+                        vsCMElement.vsCMElementUnion);
 
                     if (ts.ActivePoint.AtEndOfDocument)
                     {
@@ -344,10 +370,18 @@
             ts.DeleteLeft(2); // Removing the // part here.
             ts.Insert(doxyComment);
 
-            // Move caret to the position where the main comment will be written.
-            ts.MoveToLineAndOffset(oldLine, oldOffset);
-            ts.LineDown();
-            ts.EndOfLine();
+
+            if (!m_generator.UseSingleLineComment(codeElement))
+            {
+                // Move caret to the position where the main comment will be written.
+                ts.MoveToLineAndOffset(oldLine, oldOffset);
+                ts.LineDown();
+                ts.EndOfLine();
+            }
+            else
+            {
+                ts.MoveToLineAndOffset(oldLine, oldOffset + 2);
+            }
         }
 
 

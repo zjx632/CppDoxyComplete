@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="66281e1a-6cb9-45db-95df-8bb60af6bef3" Version="1.0.7.0" Language="en-US" Publisher="Pop Dragos" />
+        <Identity Id="66281e1a-6cb9-45db-95df-8bb60af6bef3" Version="1.0.7.5" Language="en-US" Publisher="Pop Dragos" />
         <DisplayName>CppDoxyComplete</DisplayName>
         <Description>Generate Doxygen comments in QT style</Description>
         <Icon>cppts.png</Icon>

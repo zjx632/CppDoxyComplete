@@ -77,6 +77,22 @@ namespace CppTripleSlash
         }
 
         /// <summary>
+        /// Use Single Line Comment.
+        /// </summary>
+        /// <param name="codeElement">CodeElement</param>
+        /// <returns></returns>
+        public bool UseSingleLineComment(CodeElement codeElement)
+        {
+            if (!m_config.UseSingleLineComment)
+                return false;
+
+            if (codeElement is CodeVariable)
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
         /// Generates a doxygen comment block for the given code element.
         /// </summary>
         /// <param name="spaces">Indentation for the whole comment block</param>
@@ -120,6 +136,12 @@ namespace CppTripleSlash
             }
 
             sb.Append("\r\n" + spaces + " */");
+
+            if (UseSingleLineComment(codeElement))
+            {
+                sb.Replace("\r\n", "");
+            }
+
             return sb.ToString();
         }
 
@@ -192,8 +214,13 @@ namespace CppTripleSlash
 
             if (m_config.UseBriefTag)
             {
-                string tagLine = m_indentString + m_config.TagChar + "brief" + " ";
-                sb.Append("\r\n" + spaces + " *  " + tagLine);
+                string tagLine = string.Empty;
+
+                if (!UseSingleLineComment(codeElement))
+                {
+                    tagLine = m_indentString + m_config.TagChar + "brief" + " ";
+                    sb.Append("\r\n" + spaces + " *  " + tagLine);
+                }
 
                 if (parsedComment.BriefComments.Count > 0)
                 {
