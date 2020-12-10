@@ -100,12 +100,9 @@
                     {
                         if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN)
                         {
-                            string currentLine = m_textView.TextSnapshot.GetLineFromPosition(
-                                    m_textView.Caret.Position.BufferPosition.Position).GetText();
-
-                            if (IsInsideComment(currentLine))
+                            if (IsInsideComment())
                             {
-                                NewCommentLine(currentLine);
+                                NewCommentLine();
                                 return VSConstants.S_OK;
                             }
                         }
@@ -152,8 +149,9 @@
 
                 return retVal;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.Error.WriteLine(ex.Message);
             }
 
             return VSConstants.E_FAIL;
@@ -182,15 +180,74 @@
         }
 
         /// <summary>
-        /// Check if the line is inside a comment.
+        /// Check if the current line is inside a comment.
         /// </summary>
-        /// <param name="line">The line to check.</param>
-        /// <returns>True if the line is inside a comment.</returns>
-        private static bool IsInsideComment(string line)
+        private bool IsInsideComment()
         {
+            int lineNumber = m_textView.Caret.Position.BufferPosition.GetContainingLine().LineNumber;
+
+            string trimmedLine = m_textView.TextSnapshot.GetLineFromLineNumber(lineNumber).GetText().TrimStart();
+
             // TODO: This is overly simplified and should be replaced with a solution that works also in corner cases.
-            string trimmedLine = line.TrimStart();
-            return trimmedLine.StartsWith("/*!") || trimmedLine.StartsWith("/**") || (trimmedLine.StartsWith("*") && !trimmedLine.StartsWith("*/"));
+            if (trimmedLine.StartsWith("*/"))
+                return false;
+
+            if (trimmedLine.StartsWith("/*!") || trimmedLine.StartsWith("/**"))
+                return true;
+
+            int i = lineNumber;
+            while (trimmedLine.StartsWith("*") && i > 0)
+            {
+                trimmedLine = m_textView.TextSnapshot.GetLineFromLineNumber(--i).GetText().TrimStart();
+
+                if (trimmedLine.StartsWith("/*!") || trimmedLine.StartsWith("/**"))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Creates a new comment line based on the position of the caret and Doxygen configuration.
+        /// </summary>
+        /// <param name="currentLine">Current line for reference.</param>
+        private void NewCommentLine()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            int lineNumber = m_textView.Caret.Position.BufferPosition.GetContainingLine().LineNumber;
+
+            string currentLine = m_textView.TextSnapshot.GetLineFromLineNumber(lineNumber).GetText();
+
+             
+
+            string startSpaces = currentLine.Replace(currentLine.TrimStart(), "");
+            string endSpaces = currentLine.Replace(currentLine.TrimEnd(), "");
+
+            // Try to also guess proper indentation level based on the current line.
+            int extraIndent = 0;
+
+            int i = lineNumber;
+            string loopLine = currentLine;
+
+            while (!loopLine.StartsWith("/*!") || !loopLine.StartsWith("/**"))
+            {
+                if (m_regexTagSection.IsMatch(loopLine))
+                {
+                    extraIndent = m_config.TagIndentation;
+                    break;
+                }
+
+                loopLine = m_textView.TextSnapshot.GetLineFromLineNumber(--i).GetText().TrimStart();
+            }
+
+            TextSelection ts = m_dte.ActiveDocument.Selection as TextSelection;
+
+            ts.DeleteLeft(endSpaces.Length);
+            ts.MoveToLineAndOffset(lineNumber, currentLine.Length);
+
+            // TODO: This adds trailing space. Get rid of it similarly to SmartIndent().
+            ts.Insert(m_generator.GenerateTagStartLine(startSpaces) + new string(' ', extraIndent));
         }
 
         /// <summary>
@@ -233,45 +290,6 @@
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Creates a new comment line based on the position of the caret and Doxygen configuration.
-        /// </summary>
-        /// <param name="currentLine">Current line for reference.</param>
-        private void NewCommentLine(string currentLine)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            string startSpaces = currentLine.Replace(currentLine.TrimStart(), "");
-            string endSpaces = currentLine.Replace(currentLine.TrimEnd(), "");
-
-            TextSelection ts = m_dte.ActiveDocument.Selection as TextSelection;
-
-            // Try to also guess proper indentation level based on the current line.
-            int oldLine = ts.ActivePoint.Line;
-            int oldOffset = ts.ActivePoint.LineCharOffset;
-            int extraIndent = 0;
-
-            while (!currentLine.StartsWith("/*!") || !currentLine.StartsWith("/**"))
-            {
-                if (m_regexTagSection.IsMatch(currentLine))
-                {
-                    extraIndent = m_config.TagIndentation;
-                    break;
-                }
-
-                ts.LineUp();
-                currentLine = ts.ActivePoint.CreateEditPoint().GetLines(ts.ActivePoint.Line, ts.ActivePoint.Line + 1);
-                currentLine = currentLine.TrimStart();
-            }
-
-            // Remove extra spaces from the previous line and add tag start line.
-            ts.MoveToLineAndOffset(oldLine, oldOffset);
-            ts.DeleteLeft(endSpaces.Length);
-
-            // TODO: This adds trailing space. Get rid of it similarly to SmartIndent().
-            ts.Insert(m_generator.GenerateTagStartLine(startSpaces) + new string(' ', extraIndent));
         }
 
         /// <summary>
@@ -360,12 +378,46 @@
                 while (codeElement == null)
                 {
                     codeElement = CodeElementFromPoint(fcm, ts.ActivePoint, 
-                        vsCMElement.vsCMElementFunction,
+                        vsCMElement.vsCMElementOther,
                         vsCMElement.vsCMElementClass,
-                        vsCMElement.vsCMElementStruct,
-                        vsCMElement.vsCMElementEnum,
+                        vsCMElement.vsCMElementFunction,
                         vsCMElement.vsCMElementVariable,
-                        vsCMElement.vsCMElementUnion);
+                        vsCMElement.vsCMElementProperty,
+                        vsCMElement.vsCMElementNamespace,
+                        vsCMElement.vsCMElementParameter,
+                        vsCMElement.vsCMElementAttribute,
+                        vsCMElement.vsCMElementInterface,
+                        vsCMElement.vsCMElementDelegate,
+                        vsCMElement.vsCMElementEnum,
+                        vsCMElement.vsCMElementStruct,
+                        vsCMElement.vsCMElementUnion,
+                        vsCMElement.vsCMElementLocalDeclStmt,
+                        vsCMElement.vsCMElementFunctionInvokeStmt,
+                        vsCMElement.vsCMElementPropertySetStmt,
+                        vsCMElement.vsCMElementAssignmentStmt,
+                        vsCMElement.vsCMElementInheritsStmt,
+                        vsCMElement.vsCMElementImplementsStmt,
+                        vsCMElement.vsCMElementOptionStmt,
+                        vsCMElement.vsCMElementVBAttributeStmt,
+                        vsCMElement.vsCMElementVBAttributeGroup,
+                        vsCMElement.vsCMElementEventsDeclaration,
+                        vsCMElement.vsCMElementUDTDecl,
+                        vsCMElement.vsCMElementDeclareDecl,
+                        vsCMElement.vsCMElementDefineStmt,
+                        vsCMElement.vsCMElementTypeDef,
+                        vsCMElement.vsCMElementIncludeStmt,
+                        vsCMElement.vsCMElementUsingStmt,
+                        vsCMElement.vsCMElementMacro,
+                        vsCMElement.vsCMElementMap,
+                        vsCMElement.vsCMElementIDLImport,
+                        vsCMElement.vsCMElementIDLImportLib,
+                        vsCMElement.vsCMElementIDLCoClass,
+                        vsCMElement.vsCMElementIDLLibrary,
+                        vsCMElement.vsCMElementImportStmt,
+                        vsCMElement.vsCMElementMapEntry,
+                        vsCMElement.vsCMElementVCBase,
+                        vsCMElement.vsCMElementEvent,
+                        vsCMElement.vsCMElementModule);
 
                     if (ts.ActivePoint.AtEndOfDocument)
                     {
