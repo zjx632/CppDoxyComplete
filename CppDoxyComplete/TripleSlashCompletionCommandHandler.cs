@@ -295,6 +295,21 @@
         }
 
         /// <summary>
+        /// Get FileCodeModel from Document
+        /// </summary>
+        /// <param name="doc">Document</param>
+        /// <returns>FileCodeModel</returns>
+        private FileCodeModel GetFileCodeModel(Document doc)
+        {
+            if (doc.ProjectItem != null)
+            {
+                return doc.ProjectItem.FileCodeModel;
+            }
+
+            return m_dte.ItemOperations.AddExistingItem(doc.FullName).FileCodeModel;
+        }
+
+        /// <summary>
         /// Generates a Doxygen comment block to the current caret location.
         /// </summary>
         private void GenerateComment()
@@ -338,7 +353,7 @@
             ts.LineDown();
             ts.EndOfLine();
 
-            FileCodeModel fcm = m_dte.ActiveDocument.ProjectItem.FileCodeModel;
+            FileCodeModel fcm = this.GetFileCodeModel(m_dte.ActiveDocument);
 
             if (fcm != null)
             {
