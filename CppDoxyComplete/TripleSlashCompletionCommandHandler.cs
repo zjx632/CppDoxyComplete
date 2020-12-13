@@ -184,6 +184,11 @@
         /// </summary>
         private bool IsInsideComment()
         {
+            TextSelection ts = m_dte.ActiveDocument.Selection as TextSelection;
+
+            if (!ts.IsEmpty)
+                return false;
+
             int lineNumber = m_textView.Caret.Position.BufferPosition.GetContainingLine().LineNumber;
 
             string trimmedLine = m_textView.TextSnapshot.GetLineFromLineNumber(lineNumber).GetText().TrimStart();
@@ -196,7 +201,7 @@
                 return true;
 
             int i = lineNumber;
-            while (trimmedLine.StartsWith("*") && i > 0)
+            while (trimmedLine.StartsWith("*") && i > 0 && i < m_textView.TextSnapshot.LineCount)
             {
                 trimmedLine = m_textView.TextSnapshot.GetLineFromLineNumber(--i).GetText().TrimStart();
 
@@ -238,13 +243,30 @@
                     break;
                 }
 
-                loopLine = m_textView.TextSnapshot.GetLineFromLineNumber(--i).GetText().TrimStart();
+                --i;
+
+                if (i < 0 || i > m_textView.TextSnapshot.LineCount - 1)
+                {
+                    break;
+                }
+
+                loopLine = m_textView.TextSnapshot.GetLineFromLineNumber(i).GetText().TrimStart();
             }
 
             TextSelection ts = m_dte.ActiveDocument.Selection as TextSelection;
 
             ts.DeleteLeft(endSpaces.Length);
-            ts.MoveToLineAndOffset(lineNumber, currentLine.Length);
+
+            if (currentLine.EndsWith("*/"))
+            {
+                ts.MoveToLineAndOffset(ts.CurrentLine, currentLine.Length - 1);
+            }
+            else
+            {
+                ts.MoveToLineAndOffset(ts.CurrentLine, currentLine.Length + 1);
+            }
+
+            
 
             // TODO: This adds trailing space. Get rid of it similarly to SmartIndent().
             ts.Insert(m_generator.GenerateTagStartLine(startSpaces) + new string(' ', extraIndent));
@@ -377,47 +399,13 @@
             {
                 while (codeElement == null)
                 {
-                    codeElement = CodeElementFromPoint(fcm, ts.ActivePoint, 
-                        vsCMElement.vsCMElementOther,
-                        vsCMElement.vsCMElementClass,
-                        vsCMElement.vsCMElementFunction,
-                        vsCMElement.vsCMElementVariable,
-                        vsCMElement.vsCMElementProperty,
+                    codeElement = CodeElementFromPoint(fcm, ts.ActivePoint,
                         vsCMElement.vsCMElementNamespace,
-                        vsCMElement.vsCMElementParameter,
-                        vsCMElement.vsCMElementAttribute,
-                        vsCMElement.vsCMElementInterface,
-                        vsCMElement.vsCMElementDelegate,
-                        vsCMElement.vsCMElementEnum,
+                        vsCMElement.vsCMElementClass,
                         vsCMElement.vsCMElementStruct,
-                        vsCMElement.vsCMElementUnion,
-                        vsCMElement.vsCMElementLocalDeclStmt,
-                        vsCMElement.vsCMElementFunctionInvokeStmt,
-                        vsCMElement.vsCMElementPropertySetStmt,
-                        vsCMElement.vsCMElementAssignmentStmt,
-                        vsCMElement.vsCMElementInheritsStmt,
-                        vsCMElement.vsCMElementImplementsStmt,
-                        vsCMElement.vsCMElementOptionStmt,
-                        vsCMElement.vsCMElementVBAttributeStmt,
-                        vsCMElement.vsCMElementVBAttributeGroup,
-                        vsCMElement.vsCMElementEventsDeclaration,
-                        vsCMElement.vsCMElementUDTDecl,
-                        vsCMElement.vsCMElementDeclareDecl,
-                        vsCMElement.vsCMElementDefineStmt,
-                        vsCMElement.vsCMElementTypeDef,
-                        vsCMElement.vsCMElementIncludeStmt,
-                        vsCMElement.vsCMElementUsingStmt,
-                        vsCMElement.vsCMElementMacro,
-                        vsCMElement.vsCMElementMap,
-                        vsCMElement.vsCMElementIDLImport,
-                        vsCMElement.vsCMElementIDLImportLib,
-                        vsCMElement.vsCMElementIDLCoClass,
-                        vsCMElement.vsCMElementIDLLibrary,
-                        vsCMElement.vsCMElementImportStmt,
-                        vsCMElement.vsCMElementMapEntry,
-                        vsCMElement.vsCMElementVCBase,
-                        vsCMElement.vsCMElementEvent,
-                        vsCMElement.vsCMElementModule);
+                        vsCMElement.vsCMElementEnum,
+                        vsCMElement.vsCMElementFunction,
+                        vsCMElement.vsCMElementUnion);
 
                     if (ts.ActivePoint.AtEndOfDocument)
                     {
@@ -428,6 +416,12 @@
                     {
                         ts.LineDown();
                     }
+                }
+
+                // if active line is in function body, set codeElement to null
+                if (codeElement is CodeFunction function && oldLine > codeElement.StartPoint.Line && oldLine < codeElement.EndPoint.Line)
+                {
+                    codeElement = null;
                 }
             }
 

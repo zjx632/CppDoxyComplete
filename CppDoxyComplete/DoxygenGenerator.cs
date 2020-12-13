@@ -89,6 +89,9 @@ namespace CppTripleSlash
             if (codeElement is CodeVariable)
                 return true;
 
+            if (codeElement == null)
+                return true;
+
             return false;
         }
 
@@ -129,7 +132,7 @@ namespace CppTripleSlash
             // Write other sections that were in the existing comments.
             foreach (ParsedSection section in parsedComment.TagSections)
             {
-                string tagLine = m_indentString + m_config.TagChar + section.TagName + " ";
+                string tagLine = GenerateTagString(section.TagName);
                 sb.Append("\r\n" + spaces + " *");
                 sb.Append("\r\n" + spaces + " *  " + tagLine);
                 AppendComments(sb, section.Comments, spaces, tagLine.Length);
@@ -153,6 +156,16 @@ namespace CppTripleSlash
         public string GenerateTagStartLine(string spaces)
         {
             return "\r\n" + spaces + "*  ";
+        }
+
+        /// <summary>
+        /// Generates the tag string.
+        /// </summary>
+        /// <param name="tag">The tag.</param>
+        /// <returns>System.String.</returns>
+        private string GenerateTagString(string tag)
+        {
+            return m_indentString + m_config.TagChar + tag + " ";
         }
 
         /// <summary>
@@ -218,8 +231,13 @@ namespace CppTripleSlash
 
                 if (!UseSingleLineComment(codeElement))
                 {
-                    tagLine = m_indentString + m_config.TagChar + "brief" + " ";
+                    tagLine = GenerateTagString("brief");
                     sb.Append("\r\n" + spaces + " *  " + tagLine);
+                }
+                else if (m_config.UseSingleLineBrief)
+                {
+                    tagLine = GenerateTagString("brief");
+                    sb.Append(" " + tagLine);
                 }
 
                 if (parsedComment.BriefComments.Count > 0)

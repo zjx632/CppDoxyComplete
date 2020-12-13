@@ -84,7 +84,12 @@ namespace CppTripleSlash
         /// <summary>
         /// If true, use single line comment
         /// </summary>
-        public bool UseSingleLineComment { get; set; } = true;
+        public bool UseSingleLineComment { get; set; } = false;
+
+        /// <summary>
+        /// If true, and UseSingleLineComment = true, use single line Brief Tag
+        /// </summary>
+        public bool UseSingleLineBrief { get; set; } = false;
 
         /// <summary>
         /// If true, use brief tag
